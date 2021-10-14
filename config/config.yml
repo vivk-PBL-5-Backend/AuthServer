@@ -1,0 +1,11 @@
+port: 8000
+
+auth:
+  signing_key: "signing_key"
+  hash_salt: "hash_salt"
+  token_ttl: 86400
+
+mongo:
+  uri: "mongodb+srv://dev:dev@cluster0.m7ccx.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
+  name: "Messanger"
+  collection: "Auth"
