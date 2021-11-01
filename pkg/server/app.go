@@ -1,8 +1,10 @@
 package server
 
 import (
+	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/delivery"
 	mongo2 "github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/repository/mongo"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/usecase"
 
@@ -12,6 +14,8 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 )
 
@@ -35,6 +39,39 @@ func NewApp() *App {
 	return &App{
 		authUseCase: authUseCase,
 	}
+}
+
+func (a *App) Run(port string) error {
+	router := gin.Default()
+
+	router.Use(
+		gin.Recovery(),
+		gin.Logger(),
+	)
+
+	api := router.Group("/auth")
+	delivery.RegisterHTTPEndpoints(api, a.authUseCase)
+
+	a.httpServer = &http.Server{
+		Addr:    ":" + port,
+		Handler: router,
+	}
+
+	go func() {
+		if err := a.httpServer.ListenAndServe(); err != nil {
+			log.Fatalf("Failed to listen and serve: %+v", err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, os.Interrupt)
+
+	<-quit
+
+	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdown()
+
+	return a.httpServer.Shutdown(ctx)
 }
 
 func initDB() *mongo.Database {
