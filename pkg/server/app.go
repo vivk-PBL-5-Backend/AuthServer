@@ -28,9 +28,14 @@ type App struct {
 func NewApp() *App {
 	db := initDB()
 
-	userRepo := mongo2.NewUserRepository(db, viper.GetString("mongo.collection"))
+	userRepo := mongo2.NewUserRepository(db, viper.GetString("mongo.authCollection"))
+	chatRepo := mongo2.NewChatRepository(db, viper.GetString("mongo.chatCollection"))
+	messageRepo := mongo2.NewMessageRepository(db, viper.GetString("mongo.chatCollection"),
+		viper.GetString("mongo.messageCollection"))
 	authUseCase := usecase.NewAuthorizer(
 		userRepo,
+		chatRepo,
+		messageRepo,
 		viper.GetString("auth.hash_salt"),
 		[]byte(viper.GetString("auth.signing_key")),
 		viper.GetDuration("auth.token_ttl")*time.Second,
@@ -49,8 +54,11 @@ func (a *App) Run(port string) error {
 		gin.Logger(),
 	)
 
-	api := router.Group("/auth")
-	delivery.RegisterHTTPEndpoints(api, a.authUseCase)
+	authApi := router.Group("/auth")
+	messageApi := router.Group("/message")
+
+	delivery.RegisterHTTPAuthEndpoints(authApi, a.authUseCase)
+	delivery.RegisterHTTPMessageEndpoints(messageApi, a.authUseCase)
 
 	a.httpServer = &http.Server{
 		Addr:    ":" + port,
