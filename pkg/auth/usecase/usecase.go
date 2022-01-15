@@ -13,7 +13,7 @@ import (
 
 type Authorizer struct {
 	userRepo    auth.Repository
-	chatRepo    auth.Repository
+	chatRepo    *mongo.ChatRepository
 	messageRepo *mongo.MessageRepository
 
 	hashSalt       string
@@ -21,7 +21,7 @@ type Authorizer struct {
 	expireDuration time.Duration
 }
 
-func NewAuthorizer(userRepo auth.Repository, chatRepo auth.Repository, messageRepo *mongo.MessageRepository,
+func NewAuthorizer(userRepo auth.Repository, chatRepo *mongo.ChatRepository, messageRepo *mongo.MessageRepository,
 	hashSalt string, signingKey []byte, expireDuration time.Duration) *Authorizer {
 	return &Authorizer{
 		userRepo:       userRepo,
@@ -44,7 +44,6 @@ func (a *Authorizer) SignUp(ctx context.Context, user *models.User) error {
 		return result
 	}
 
-	_ = a.chatRepo.Insert(ctx, user)
 	return result
 }
 
@@ -77,4 +76,16 @@ func (a *Authorizer) Send(ctx context.Context, message *models.Message) error {
 func (a *Authorizer) Get(ctx context.Context, userID string, senderID string) ([]models.Message, error) {
 	result, err := a.messageRepo.Get(ctx, userID, senderID)
 	return result, err
+}
+
+func (a *Authorizer) AddCompanion(ctx context.Context, userID string, companionID string) error {
+	return a.chatRepo.AddCompanion(ctx, userID, companionID)
+}
+
+func (a *Authorizer) RemoveCompanion(ctx context.Context, userID string, companionID string) error {
+	return a.chatRepo.RemoveCompanion(ctx, userID, companionID)
+}
+
+func (a *Authorizer) GetCompanions(ctx context.Context, userID string) ([]string, error) {
+	return a.chatRepo.GetCompanions(ctx, userID)
 }

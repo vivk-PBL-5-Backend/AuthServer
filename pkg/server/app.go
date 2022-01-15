@@ -56,9 +56,11 @@ func (a *App) Run(port string) error {
 
 	authApi := router.Group("/auth")
 	messageApi := router.Group("/message")
+	chatApi := router.Group("/chat")
 
 	delivery.RegisterHTTPAuthEndpoints(authApi, a.authUseCase)
 	delivery.RegisterHTTPMessageEndpoints(messageApi, a.authUseCase)
+	delivery.RegisterHTTPChatEndpoints(chatApi, a.authUseCase)
 
 	a.httpServer = &http.Server{
 		Addr:    ":" + port,

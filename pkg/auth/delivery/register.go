@@ -18,3 +18,11 @@ func RegisterHTTPMessageEndpoints(router *gin.RouterGroup, usecase auth.UseCase)
 	router.POST("/send", h.send)
 	router.GET("/get", h.get)
 }
+
+func RegisterHTTPChatEndpoints(router *gin.RouterGroup, usecase auth.UseCase) {
+	h := newHandler(usecase)
+
+	router.POST("/add_companion/:companion", h.addCompanion)
+	router.POST("/remove_companion/:companion", h.removeCompanion)
+	router.GET("/get_companions", h.getCompanions)
+}
