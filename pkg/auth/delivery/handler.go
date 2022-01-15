@@ -41,6 +41,9 @@ func newHandler(useCase auth.UseCase) *handler {
 
 func (h *handler) signUp(c *gin.Context) {
 	inp := new(models.User)
+
+	c.Header("Access-Control-Allow-Origin", "*")
+
 	if err := c.BindJSON(inp); err != nil {
 		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
 		return
@@ -71,6 +74,9 @@ func newSignInResponse(status, msg, token string) *signInResponse {
 
 func (h *handler) signIn(c *gin.Context) {
 	inp := new(models.User)
+
+	c.Header("Access-Control-Allow-Origin", "*")
+
 	if err := c.BindJSON(inp); err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
@@ -97,6 +103,8 @@ func (h *handler) signIn(c *gin.Context) {
 
 func (h *handler) send(c *gin.Context) {
 	message := new(models.Message)
+
+	c.Header("Access-Control-Allow-Origin", "*")
 
 	reqToken := c.Request.Header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
@@ -126,6 +134,8 @@ func (h *handler) send(c *gin.Context) {
 
 func (h *handler) get(c *gin.Context) {
 	message := new(models.Message)
+
+	c.Header("Access-Control-Allow-Origin", "*")
 
 	reqToken := c.Request.Header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
