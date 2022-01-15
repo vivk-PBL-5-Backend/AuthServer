@@ -2,9 +2,14 @@ package delivery
 
 import (
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/models"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/parser"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"net/http"
+	"strings"
+	"time"
 )
 
 const (
@@ -88,4 +93,60 @@ func (h *handler) signIn(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, newSignInResponse(STATUS_OK, "", token))
+}
+
+func (h *handler) send(c *gin.Context) {
+	message := new(models.Message)
+
+	reqToken := c.Request.Header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	token := splitToken[1]
+
+	userID, err := parser.ParseToken(token, []byte(viper.GetString("auth.signing_key")))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	if err = c.BindJSON(message); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	message.ID = primitive.NewObjectID()
+	message.AuthorID = userID
+	message.Date = time.Now()
+	if err = h.useCase.Send(c.Request.Context(), message); err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, newResponse(STATUS_OK, "user created successfully"))
+}
+
+func (h *handler) get(c *gin.Context) {
+	message := new(models.Message)
+
+	reqToken := c.Request.Header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	token := splitToken[1]
+
+	userID, err := parser.ParseToken(token, []byte(viper.GetString("auth.signing_key")))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	if err = c.BindJSON(message); err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	messages, err := h.useCase.Get(c.Request.Context(), userID, message.AuthorID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, messages)
 }

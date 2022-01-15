@@ -8,4 +8,6 @@ auth:
 mongo:
   uri: "mongodb+srv://dev:dev@cluster0.m7ccx.mongodb.net/myFirstDatabase?retryWrites=true&w=majority"
   name: "Messanger"
-  collection: "Auth"
+  authCollection: "Auth"
+  chatCollection: "Chat"
+  messageCollection: "Message"
