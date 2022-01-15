@@ -160,3 +160,67 @@ func (h *handler) get(c *gin.Context) {
 
 	c.JSON(http.StatusOK, messages)
 }
+
+func (h *handler) addCompanion(c *gin.Context) {
+	reqToken := c.Request.Header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	token := splitToken[1]
+
+	userID, err := parser.ParseToken(token, []byte(viper.GetString("auth.signing_key")))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	companionID := c.Param("companion")
+
+	err = h.useCase.AddCompanion(c.Request.Context(), userID, companionID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, "Added companion - "+companionID)
+}
+
+func (h *handler) removeCompanion(c *gin.Context) {
+	reqToken := c.Request.Header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	token := splitToken[1]
+
+	userID, err := parser.ParseToken(token, []byte(viper.GetString("auth.signing_key")))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	companionID := c.Param("companion")
+
+	err = h.useCase.RemoveCompanion(c.Request.Context(), userID, companionID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, "Removed companion - "+companionID)
+}
+
+func (h *handler) getCompanions(c *gin.Context) {
+	reqToken := c.Request.Header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	token := splitToken[1]
+
+	userID, err := parser.ParseToken(token, []byte(viper.GetString("auth.signing_key")))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	companions, err := h.useCase.GetCompanions(c.Request.Context(), userID)
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, companions)
+}
