@@ -16,4 +16,5 @@ func RegisterHTTPMessageEndpoints(router *gin.RouterGroup, usecase auth.UseCase)
 	h := newHandler(usecase)
 
 	router.POST("/send", h.send)
+	router.GET("/get", h.get)
 }

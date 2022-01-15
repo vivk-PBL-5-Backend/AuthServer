@@ -71,10 +71,10 @@ func (a *Authorizer) SignIn(ctx context.Context, user *models.User) (string, err
 }
 
 func (a *Authorizer) Send(ctx context.Context, message *models.Message) error {
-	result := a.messageRepo.Send(ctx, message)
-	if result != nil {
-		return result
-	}
+	return a.messageRepo.Send(ctx, message)
+}
 
-	return result
+func (a *Authorizer) Get(ctx context.Context, userID string, senderID string) ([]models.Message, error) {
+	result, err := a.messageRepo.Get(ctx, userID, senderID)
+	return result, err
 }
