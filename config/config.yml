@@ -11,3 +11,12 @@ mongo:
   authCollection: "Auth"
   chatCollection: "Chat"
   messageCollection: "Message"
+
+aes:
+  auth-key: "./config/keys/auth.key"
+  chat-key: "./config/keys/chat.key"
+  message-key: "./config/keys/message.key"
+  iv-key: "./config/keys/iv.key"
+
+rsa:
+  message-key: "./config/keys/message-private-key.pem"
