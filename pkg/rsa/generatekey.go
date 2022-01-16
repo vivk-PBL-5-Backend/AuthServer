@@ -5,15 +5,9 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	log "github.com/sirupsen/logrus"
-	"io/ioutil"
 )
 
-func GenerateKeyPair(privateKeyPath string) (*rsa.PublicKey, *rsa.PrivateKey) {
-	privateBytes, err := ioutil.ReadFile(privateKeyPath)
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func generateKeyPair(privateBytes []byte) (*rsa.PublicKey, *rsa.PrivateKey) {
 	block, _ := pem.Decode(privateBytes)
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {

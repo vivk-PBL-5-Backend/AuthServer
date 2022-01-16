@@ -7,11 +7,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func Decrypt(key *rsa.PrivateKey, cipherText string) string {
+func (cipher *rsaCipher) Decrypt(ciphertext string) string {
 	hash := sha512.New()
-	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, key, []byte(cipherText), nil)
+	plaintext, err := rsa.DecryptOAEP(hash, rand.Reader, cipher.privateKey, []byte(ciphertext), nil)
 	if err != nil {
-		log.Error(err)
+		log.Error(err.Error())
 	}
 	return string(plaintext)
 }
