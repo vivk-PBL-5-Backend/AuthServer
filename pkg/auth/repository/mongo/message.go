@@ -2,11 +2,11 @@ package mongo
 
 import (
 	"context"
-	"crypto/rsa"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/aes"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/cipheradapter"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/filereader"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/models"
 	rsa2 "github.com/vivk-PBL-5-Backend/AuthServer/pkg/rsa"
@@ -19,36 +19,32 @@ type MessageRepository struct {
 	messageDB *mongo.Collection
 	chatDB    *mongo.Collection
 
-	publicKey  *rsa.PublicKey
-	privateKey *rsa.PrivateKey
-
-	cipher aes.ICipher
+	rsaCipher cipheradapter.ICipher
+	aesCipher cipheradapter.ICipher
 }
 
 func NewMessageRepository(db *mongo.Database, chatCollection string, messageCollection string) *MessageRepository {
 	messageKey := filereader.ReadFile(viper.GetString("aes.message-key"))
 	ivKey := filereader.ReadFile(viper.GetString("aes.iv-key"))
 
-	cipher := aes.New([]byte(messageKey), []byte(ivKey))
+	aesCipher := aes.New([]byte(messageKey), []byte(ivKey))
 
-	privateKeyPath := viper.GetString("rsa.message-key")
-	publicKey, privateKey := rsa2.GenerateKeyPair(privateKeyPath)
+	privateKey := filereader.ReadFile(viper.GetString("rsa.message-key"))
+	rsaCipher := rsa2.New([]byte(privateKey))
 
 	return &MessageRepository{
 		messageDB: db.Collection(messageCollection),
 		chatDB:    db.Collection(chatCollection),
 
-		publicKey:  publicKey,
-		privateKey: privateKey,
-
-		cipher: cipher,
+		rsaCipher: rsaCipher,
+		aesCipher: aesCipher,
 	}
 }
 
 func (r *MessageRepository) Send(ctx context.Context, message *models.Message) error {
-	message.AuthorID = r.cipher.Encrypt(message.AuthorID)
-	message.DestinationID = r.cipher.Encrypt(message.DestinationID)
-	message.Content = rsa2.Encrypt(r.publicKey, message.Content)
+	message.AuthorID = r.aesCipher.Encrypt(message.AuthorID)
+	message.DestinationID = r.aesCipher.Encrypt(message.DestinationID)
+	message.Content = r.rsaCipher.Encrypt(message.Content)
 
 	_, err := r.messageDB.InsertOne(ctx, message)
 	if err != nil {
@@ -60,8 +56,8 @@ func (r *MessageRepository) Send(ctx context.Context, message *models.Message) e
 }
 
 func (r *MessageRepository) Get(ctx context.Context, user string, companion string) ([]models.Message, error) {
-	userID := r.cipher.Encrypt(user)
-	companionID := r.cipher.Encrypt(companion)
+	userID := r.aesCipher.Encrypt(user)
+	companionID := r.aesCipher.Encrypt(companion)
 
 	messages := make([]models.Message, 0)
 
@@ -104,9 +100,9 @@ func (r *MessageRepository) Get(ctx context.Context, user string, companion stri
 
 func (r *MessageRepository) messagesDecrypt(messages []models.Message) []models.Message {
 	for i, _ := range messages {
-		messages[i].AuthorID = strings.TrimSpace(r.cipher.Decrypt(messages[i].AuthorID))
-		messages[i].DestinationID = strings.TrimSpace(r.cipher.Decrypt(messages[i].DestinationID))
-		messages[i].Content = strings.TrimSpace(rsa2.Decrypt(r.privateKey, messages[i].Content))
+		messages[i].AuthorID = strings.TrimSpace(r.aesCipher.Decrypt(messages[i].AuthorID))
+		messages[i].DestinationID = strings.TrimSpace(r.aesCipher.Decrypt(messages[i].DestinationID))
+		messages[i].Content = strings.TrimSpace(r.rsaCipher.Decrypt(messages[i].Content))
 	}
 	return messages
 }

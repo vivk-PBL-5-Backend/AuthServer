@@ -6,6 +6,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/aes"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/cipheradapter"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/filereader"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,19 +17,19 @@ import (
 type ChatRepository struct {
 	db *mongo.Collection
 
-	cipher aes.ICipher
+	aesCipher cipheradapter.ICipher
 }
 
 func NewChatRepository(db *mongo.Database, collection string) *ChatRepository {
 	chatKey := filereader.ReadFile(viper.GetString("aes.chat-key"))
 	ivKey := filereader.ReadFile(viper.GetString("aes.iv-key"))
 
-	cipher := aes.New([]byte(chatKey), []byte(ivKey))
+	aesCipher := aes.New([]byte(chatKey), []byte(ivKey))
 
 	return &ChatRepository{
 		db: db.Collection(collection),
 
-		cipher: cipher,
+		aesCipher: aesCipher,
 	}
 }
 
@@ -38,7 +39,7 @@ func (r *ChatRepository) AddCompanion(ctx context.Context, userID string, compan
 		return err
 	}
 
-	companionID = r.cipher.Encrypt(companionID)
+	companionID = r.aesCipher.Encrypt(companionID)
 
 	companionIndex := -1
 	for i, elem := range chat.Companions {
@@ -67,7 +68,7 @@ func (r *ChatRepository) RemoveCompanion(ctx context.Context, userID string, com
 		return err
 	}
 
-	companionID = r.cipher.Encrypt(companionID)
+	companionID = r.aesCipher.Encrypt(companionID)
 
 	companionIndex := -1
 	for i, elem := range chat.Companions {
@@ -103,7 +104,7 @@ func (r *ChatRepository) GetCompanions(ctx context.Context, userID string) ([]st
 func (r *ChatRepository) findOrCreate(ctx context.Context, userID string) (*models.Chat, error) {
 	chat := new(models.Chat)
 
-	username := r.cipher.Encrypt(userID)
+	username := r.aesCipher.Encrypt(userID)
 
 	if err := r.db.FindOne(ctx, bson.M{"_id": username}).Decode(chat); err != nil {
 		if err != mongo.ErrNoDocuments {
@@ -126,7 +127,7 @@ func (r *ChatRepository) findOrCreate(ctx context.Context, userID string) (*mode
 
 func (r *ChatRepository) companionsDecrypt(companions []string) []string {
 	for i, _ := range companions {
-		companions[i] = strings.TrimSpace(r.cipher.Decrypt(companions[i]))
+		companions[i] = strings.TrimSpace(r.aesCipher.Decrypt(companions[i]))
 	}
 	return companions
 }

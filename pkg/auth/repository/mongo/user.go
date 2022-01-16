@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/viper"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/aes"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/cipheradapter"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/filereader"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
@@ -16,24 +17,24 @@ import (
 type UserRepository struct {
 	db *mongo.Collection
 
-	cipher aes.ICipher
+	aesCipher cipheradapter.ICipher
 }
 
 func NewUserRepository(db *mongo.Database, collection string) *UserRepository {
 	authKey := filereader.ReadFile(viper.GetString("aes.auth-key"))
 	ivKey := filereader.ReadFile(viper.GetString("aes.iv-key"))
 
-	cipher := aes.New([]byte(authKey), []byte(ivKey))
+	aesCipher := aes.New([]byte(authKey), []byte(ivKey))
 
 	return &UserRepository{
 		db: db.Collection(collection),
 
-		cipher: cipher,
+		aesCipher: aesCipher,
 	}
 }
 
 func (r *UserRepository) Insert(ctx context.Context, user *models.User) error {
-	user.Username = r.cipher.Encrypt(user.Username)
+	user.Username = r.aesCipher.Encrypt(user.Username)
 
 	_, err := r.db.InsertOne(ctx, user)
 	if err != nil {
@@ -47,7 +48,7 @@ func (r *UserRepository) Insert(ctx context.Context, user *models.User) error {
 func (r *UserRepository) Get(ctx context.Context, username, password string) (*models.User, error) {
 	user := new(models.User)
 
-	user.Username = r.cipher.Encrypt(username)
+	user.Username = r.aesCipher.Encrypt(username)
 	if err := r.db.FindOne(ctx, bson.M{"_id": user.Username, "password": password}).Decode(user); err != nil {
 		log.Errorf("error occured while getting user from db: %s", err.Error())
 		if err == mongo.ErrNoDocuments {
@@ -57,6 +58,6 @@ func (r *UserRepository) Get(ctx context.Context, username, password string) (*m
 		return nil, err
 	}
 
-	user.Username = strings.TrimSpace(r.cipher.Decrypt(user.Username))
+	user.Username = strings.TrimSpace(r.aesCipher.Decrypt(user.Username))
 	return user, nil
 }
