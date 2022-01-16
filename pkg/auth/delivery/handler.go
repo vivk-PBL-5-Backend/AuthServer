@@ -180,7 +180,7 @@ func (h *handler) addCompanion(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, "Added companion - "+companionID)
+	c.JSON(http.StatusOK, newResponse(STATUS_OK, "added companion [\""+companionID+"\"]"))
 }
 
 func (h *handler) removeCompanion(c *gin.Context) {
@@ -202,7 +202,7 @@ func (h *handler) removeCompanion(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusOK, "Removed companion - "+companionID)
+	c.JSON(http.StatusOK, newResponse(STATUS_OK, "removed companion [\""+companionID+"\"]"))
 }
 
 func (h *handler) getCompanions(c *gin.Context) {
