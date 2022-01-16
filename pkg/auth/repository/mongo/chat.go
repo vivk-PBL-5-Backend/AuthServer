@@ -4,18 +4,31 @@ import (
 	"context"
 	"errors"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/aes"
+	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/filereader"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/models"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"strings"
 )
 
 type ChatRepository struct {
 	db *mongo.Collection
+
+	cipher aes.ICipher
 }
 
 func NewChatRepository(db *mongo.Database, collection string) *ChatRepository {
+	chatKey := filereader.ReadFile(viper.GetString("aes.chat-key"))
+	ivKey := filereader.ReadFile(viper.GetString("aes.iv-key"))
+
+	cipher := aes.New([]byte(chatKey), []byte(ivKey))
+
 	return &ChatRepository{
 		db: db.Collection(collection),
+
+		cipher: cipher,
 	}
 }
 
@@ -24,6 +37,8 @@ func (r *ChatRepository) AddCompanion(ctx context.Context, userID string, compan
 	if err != nil {
 		return err
 	}
+
+	companionID = r.cipher.Encrypt(companionID)
 
 	companionIndex := -1
 	for i, elem := range chat.Companions {
@@ -51,6 +66,8 @@ func (r *ChatRepository) RemoveCompanion(ctx context.Context, userID string, com
 	if err != nil {
 		return err
 	}
+
+	companionID = r.cipher.Encrypt(companionID)
 
 	companionIndex := -1
 	for i, elem := range chat.Companions {
@@ -80,19 +97,21 @@ func (r *ChatRepository) GetCompanions(ctx context.Context, userID string) ([]st
 		return nil, err
 	}
 
-	return chat.Companions, nil
+	return r.companionsDecrypt(chat.Companions), nil
 }
 
 func (r *ChatRepository) findOrCreate(ctx context.Context, userID string) (*models.Chat, error) {
 	chat := new(models.Chat)
 
-	if err := r.db.FindOne(ctx, bson.M{"_id": userID}).Decode(chat); err != nil {
+	username := r.cipher.Encrypt(userID)
+
+	if err := r.db.FindOne(ctx, bson.M{"_id": username}).Decode(chat); err != nil {
 		if err != mongo.ErrNoDocuments {
 			log.Errorf("error occured while getting chat from db: %s", err.Error())
 			return nil, err
 		}
 
-		chat.Username = userID
+		chat.Username = username
 		chat.Companions = make([]string, 0)
 
 		_, err = r.db.InsertOne(ctx, chat)
@@ -103,4 +122,11 @@ func (r *ChatRepository) findOrCreate(ctx context.Context, userID string) (*mode
 	}
 
 	return chat, nil
+}
+
+func (r *ChatRepository) companionsDecrypt(companions []string) []string {
+	for i, _ := range companions {
+		companions[i] = strings.TrimSpace(r.cipher.Decrypt(companions[i]))
+	}
+	return companions
 }
