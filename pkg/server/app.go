@@ -67,8 +67,11 @@ func (a *App) Run(port string) error {
 		Handler: router,
 	}
 
+	crt := viper.GetString("tls.crt")
+	key := viper.GetString("tls.key")
+
 	go func() {
-		if err := a.httpServer.ListenAndServe(); err != nil {
+		if err := a.httpServer.ListenAndServeTLS(crt, key); err != nil {
 			log.Fatalf("Failed to listen and serve: %+v", err)
 		}
 	}()
