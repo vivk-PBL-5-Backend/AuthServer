@@ -5,6 +5,7 @@ go 1.16
 require (
 	github.com/dgrijalva/jwt-go/v4 v4.0.0-preview1
 	github.com/fsnotify/fsnotify v1.4.9 // indirect
+	github.com/gin-contrib/cors v1.3.1 // indirect
 	github.com/gin-gonic/gin v1.6.1
 	github.com/golang/protobuf v1.3.5 // indirect
 	github.com/klauspost/compress v1.10.3 // indirect
