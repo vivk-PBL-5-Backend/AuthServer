@@ -1,4 +1,6 @@
-port: 8000
+port:
+  http: 8000
+  https: 8001
 
 auth:
   signing_key: "signing_key"

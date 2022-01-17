@@ -21,7 +21,7 @@ func main() {
 
 	app := server.NewApp()
 
-	if err := app.Run(viper.GetString("port")); err != nil {
+	if err := app.Run(viper.GetString("port.http"), viper.GetString("port.https")); err != nil {
 		log.Fatalf("%s", err.Error())
 	}
 }

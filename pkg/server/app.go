@@ -8,7 +8,6 @@ import (
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/delivery"
 	mongo2 "github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/repository/mongo"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth/usecase"
-
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 
@@ -21,7 +20,8 @@ import (
 )
 
 type App struct {
-	httpServer *http.Server
+	httpServer  *http.Server
+	httpsServer *http.Server
 
 	authUseCase auth.UseCase
 }
@@ -47,7 +47,7 @@ func NewApp() *App {
 	}
 }
 
-func (a *App) Run(port string) error {
+func (a *App) Run(httpPort string, httpsPort string) error {
 	router := gin.Default()
 
 	router.Use(
@@ -73,7 +73,12 @@ func (a *App) Run(port string) error {
 	delivery.RegisterHTTPChatEndpoints(chatApi, a.authUseCase)
 
 	a.httpServer = &http.Server{
-		Addr:    ":" + port,
+		Addr:    ":" + httpPort,
+		Handler: router,
+	}
+
+	a.httpsServer = &http.Server{
+		Addr:    ":" + httpsPort,
 		Handler: router,
 	}
 
@@ -81,7 +86,13 @@ func (a *App) Run(port string) error {
 	key := viper.GetString("tls.key")
 
 	go func() {
-		if err := a.httpServer.ListenAndServeTLS(crt, key); err != nil {
+		if err := a.httpServer.ListenAndServe(); err != nil {
+			log.Fatalf("Failed to listen and serve: %+v", err)
+		}
+	}()
+
+	go func() {
+		if err := a.httpsServer.ListenAndServeTLS(crt, key); err != nil {
 			log.Fatalf("Failed to listen and serve: %+v", err)
 		}
 	}()
