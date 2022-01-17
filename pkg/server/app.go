@@ -1,6 +1,7 @@
 package server
 
 import (
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth"
@@ -53,6 +54,15 @@ func (a *App) Run(port string) error {
 		gin.Recovery(),
 		gin.Logger(),
 	)
+
+	router.Use(cors.New(cors.Config{
+		AllowOrigins:     []string{"*"},
+		AllowMethods:     []string{"GET", "POST"},
+		AllowHeaders:     []string{"Origin", "Authorization"},
+		ExposeHeaders:    []string{"Content-Length"},
+		AllowCredentials: true,
+		MaxAge:           12 * time.Hour,
+	}))
 
 	authApi := router.Group("/auth")
 	messageApi := router.Group("/message")

@@ -162,6 +162,9 @@ func (h *handler) get(c *gin.Context) {
 }
 
 func (h *handler) addCompanion(c *gin.Context) {
+
+	c.Header("Access-Control-Allow-Origin", "*")
+
 	reqToken := c.Request.Header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
 	token := splitToken[1]
@@ -184,6 +187,9 @@ func (h *handler) addCompanion(c *gin.Context) {
 }
 
 func (h *handler) removeCompanion(c *gin.Context) {
+
+	c.Header("Access-Control-Allow-Origin", "*")
+
 	reqToken := c.Request.Header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
 	token := splitToken[1]
@@ -206,6 +212,9 @@ func (h *handler) removeCompanion(c *gin.Context) {
 }
 
 func (h *handler) getCompanions(c *gin.Context) {
+
+	c.Header("Access-Control-Allow-Origin", "*")
+
 	reqToken := c.Request.Header.Get("Authorization")
 	splitToken := strings.Split(reqToken, "Bearer ")
 	token := splitToken[1]
