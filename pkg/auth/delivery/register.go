@@ -17,7 +17,7 @@ func RegisterHTTPMessageEndpoints(router *gin.RouterGroup, usecase auth.UseCase)
 	h := newHandler(usecase)
 
 	router.POST("/send", h.send)
-	router.GET("/get", h.get)
+	router.GET("/:companion", h.get)
 }
 
 func RegisterHTTPChatEndpoints(router *gin.RouterGroup, usecase auth.UseCase) {
