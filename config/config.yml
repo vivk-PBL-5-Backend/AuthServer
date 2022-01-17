@@ -12,6 +12,10 @@ mongo:
   chatCollection: "Crypto.Chat"
   messageCollection: "Crypto.Message"
 
+tls:
+  crt: "./config/keys/server.crt"
+  key: "./config/keys/server.key"
+
 aes:
   auth-key: "./config/keys/auth.key"
   chat-key: "./config/keys/chat.key"
