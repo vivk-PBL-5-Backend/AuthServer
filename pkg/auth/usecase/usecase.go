@@ -84,11 +84,29 @@ func (a *Authorizer) AddCompanion(ctx context.Context, userID string, companionI
 	if err != nil {
 		return errors.New("companion does not exist")
 	}
+	if userID == companionID {
+		return errors.New("can not add yourself as companion")
+	}
 	return a.chatRepo.AddCompanion(ctx, userID, companionID)
 }
 
 func (a *Authorizer) RemoveCompanion(ctx context.Context, userID string, companionID string) error {
-	return a.chatRepo.RemoveCompanion(ctx, userID, companionID)
+	err := a.chatRepo.RemoveCompanion(ctx, userID, companionID)
+	if err != nil {
+		return err
+	}
+
+	err = a.messageRepo.Remove(ctx, userID, companionID)
+	if err != nil {
+		return err
+	}
+
+	err = a.messageRepo.Remove(ctx, companionID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (a *Authorizer) GetCompanions(ctx context.Context, userID string) ([]string, error) {
