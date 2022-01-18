@@ -34,7 +34,7 @@ func (r *MessageRepository) Send(ctx context.Context, message *models.Message) e
 func (r *MessageRepository) Get(ctx context.Context, destination string, author string) ([]models.Message, error) {
 	messages := make([]models.Message, 0)
 
-	cursor, err := r.messageDB.Find(ctx, bson.M{"destination_id": destination, "author_id": author})
+	cursor, err := r.messageDB.Find(ctx, bson.M{"destination_id": author, "author_id": destination})
 	if err == nil {
 		for cursor.Next(ctx) {
 			var elem models.Message
@@ -48,7 +48,7 @@ func (r *MessageRepository) Get(ctx context.Context, destination string, author 
 		}
 	}
 
-	cursor, err = r.messageDB.Find(ctx, bson.M{"destination_id": author, "author_id": destination})
+	cursor, err = r.messageDB.Find(ctx, bson.M{"destination_id": destination, "author_id": author})
 	if err == nil {
 		for cursor.Next(ctx) {
 			var elem models.Message
