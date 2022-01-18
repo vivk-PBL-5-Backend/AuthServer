@@ -43,3 +43,18 @@ func (r *UserRepository) Get(ctx context.Context, username, password string) (*m
 
 	return user, nil
 }
+
+func (r *UserRepository) Exist(ctx context.Context, userID string) error {
+	user := new(models.User)
+
+	if err := r.db.FindOne(ctx, bson.M{"_id": userID}).Decode(user); err != nil {
+		log.Errorf("error occured while getting user from db: %s", err.Error())
+		if err == mongo.ErrNoDocuments {
+			return auth.ErrUserDoesNotExist
+		}
+
+		return err
+	}
+
+	return nil
+}

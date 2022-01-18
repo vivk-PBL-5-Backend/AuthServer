@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"github.com/dgrijalva/jwt-go/v4"
 	"github.com/vivk-PBL-5-Backend/AuthServer/pkg/auth"
@@ -79,6 +80,10 @@ func (a *Authorizer) Get(ctx context.Context, userID string, senderID string) ([
 }
 
 func (a *Authorizer) AddCompanion(ctx context.Context, userID string, companionID string) error {
+	err := a.userRepo.Exist(ctx, companionID)
+	if err != nil {
+		return errors.New("companion does not exist")
+	}
 	return a.chatRepo.AddCompanion(ctx, userID, companionID)
 }
 
