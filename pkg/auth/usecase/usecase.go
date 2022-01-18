@@ -91,7 +91,22 @@ func (a *Authorizer) AddCompanion(ctx context.Context, userID string, companionI
 }
 
 func (a *Authorizer) RemoveCompanion(ctx context.Context, userID string, companionID string) error {
-	return a.chatRepo.RemoveCompanion(ctx, userID, companionID)
+	err := a.chatRepo.RemoveCompanion(ctx, userID, companionID)
+	if err != nil {
+		return err
+	}
+
+	err = a.messageRepo.Remove(ctx, userID, companionID)
+	if err != nil {
+		return err
+	}
+
+	err = a.messageRepo.Remove(ctx, companionID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (a *Authorizer) GetCompanions(ctx context.Context, userID string) ([]string, error) {

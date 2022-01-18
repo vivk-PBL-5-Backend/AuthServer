@@ -70,3 +70,25 @@ func (r *MessageRepository) Get(ctx context.Context, destination string, author 
 
 	return messages, nil
 }
+
+func (r *MessageRepository) Remove(ctx context.Context, destination string, author string) error {
+	cursor, err := r.messageDB.Find(ctx, bson.M{"destination_id": destination, "author_id": author})
+	if err == nil {
+		for cursor.Next(ctx) {
+			var elem models.Message
+			err = cursor.Decode(&elem)
+			if err != nil {
+				log.Errorf("error on get message: %s", err.Error())
+				return err
+			}
+
+			_, err = r.messageDB.DeleteOne(ctx, bson.M{"_id": elem.ID})
+			if err != nil {
+				log.Errorf("error on get message: %s", err.Error())
+				return err
+			}
+		}
+	}
+
+	return nil
+}
