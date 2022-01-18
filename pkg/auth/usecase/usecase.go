@@ -84,6 +84,9 @@ func (a *Authorizer) AddCompanion(ctx context.Context, userID string, companionI
 	if err != nil {
 		return errors.New("companion does not exist")
 	}
+	if userID == companionID {
+		return errors.New("can not add yourself as companion")
+	}
 	return a.chatRepo.AddCompanion(ctx, userID, companionID)
 }
 
