@@ -4,22 +4,31 @@ import (
 	"crypto/aes"
 	cipher2 "crypto/cipher"
 	"encoding/hex"
-	log "github.com/sirupsen/logrus"
+	"fmt"
 )
 
 func (cipher *aesCipher) Decrypt(ciphertext string) string {
-	ciphertextDecode, err := hex.DecodeString(ciphertext)
-	if err != nil {
-		log.Fatal(err.Error())
-	}
+	enc, _ := hex.DecodeString(ciphertext)
+	encrypted := string(enc)
 
 	block, err := aes.NewCipher(cipher.key)
 	if err != nil {
-		log.Fatal(err.Error())
+		panic(err.Error())
 	}
 
-	plaintextBytes := make([]byte, cipher.blockSize)
-	modeDecrypter := cipher2.NewCBCDecrypter(block, cipher.iv)
-	modeDecrypter.CryptBlocks(plaintextBytes, ciphertextDecode)
-	return string(plaintextBytes)
+	aesGCM, err := cipher2.NewGCM(block)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	nonceSize := aesGCM.NonceSize()
+
+	nonce, ciphertext := encrypted[:nonceSize], encrypted[nonceSize:]
+
+	plaintext, err := aesGCM.Open(nil, []byte(nonce), []byte(ciphertext), nil)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	return fmt.Sprintf("%s", plaintext)
 }
