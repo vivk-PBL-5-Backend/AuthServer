@@ -101,6 +101,22 @@ func (h *handler) signIn(c *gin.Context) {
 	c.JSON(http.StatusOK, newSignInResponse(STATUS_OK, "", token))
 }
 
+func (h *handler) getUser(c *gin.Context) {
+	c.Header("Access-Control-Allow-Origin", "*")
+
+	reqToken := c.Request.Header.Get("Authorization")
+	splitToken := strings.Split(reqToken, "Bearer ")
+	token := splitToken[1]
+
+	userID, err := parser.ParseToken(token, []byte(viper.GetString("auth.signing_key")))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
+		return
+	}
+
+	c.JSON(http.StatusOK, newResponse(STATUS_OK, userID))
+}
+
 func (h *handler) send(c *gin.Context) {
 	message := new(models.Message)
 
@@ -133,8 +149,6 @@ func (h *handler) send(c *gin.Context) {
 }
 
 func (h *handler) get(c *gin.Context) {
-	message := new(models.Message)
-
 	c.Header("Access-Control-Allow-Origin", "*")
 
 	reqToken := c.Request.Header.Get("Authorization")
@@ -147,12 +161,9 @@ func (h *handler) get(c *gin.Context) {
 		return
 	}
 
-	if err = c.BindJSON(message); err != nil {
-		c.AbortWithStatusJSON(http.StatusBadRequest, newResponse(STATUS_ERROR, err.Error()))
-		return
-	}
+	companionID := c.Param("companion")
 
-	messages, err := h.useCase.Get(c.Request.Context(), userID, message.AuthorID)
+	messages, err := h.useCase.Get(c.Request.Context(), userID, companionID)
 	if err != nil {
 		c.AbortWithStatusJSON(http.StatusInternalServerError, newResponse(STATUS_ERROR, err.Error()))
 		return
