@@ -107,8 +107,12 @@ func (r *MessageRepository) messagesDecrypt(messages []models.Message) []models.
 	return messages
 }
 
-func (r *MessageRepository) Remove(ctx context.Context, destination string, author string) error {
-	cursor, err := r.messageDB.Find(ctx, bson.M{"destination_id": destination, "author_id": author})
+func (r *MessageRepository) Remove(ctx context.Context, user string, companion string) error {
+
+	userID := r.aesCipher.Encrypt(user)
+	companionID := r.aesCipher.Encrypt(companion)
+
+	cursor, err := r.messageDB.Find(ctx, bson.M{"destination_id": companionID, "author_id": userID})
 	if err == nil {
 		for cursor.Next(ctx) {
 			var elem models.Message
